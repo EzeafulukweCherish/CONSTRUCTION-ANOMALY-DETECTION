@@ -1,5 +1,5 @@
 services:
-  fraud-detector:
+  anomaly-detector:
     build: .
     ports:
       - "8501:8501"
