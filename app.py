@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
-st.set_page_config(page_title="Construction Project Fraud Detector", layout="wide")
-st.title("Construction Project Fraud Detector")
+st.set_page_config(page_title="Construction Project Anomaly Detector", layout="wide")
+st.title("Construction Project Anomaly Detector")
 st.caption(
     "An earned-value baseline, a consistency checker that compares reported effort "
-    "against verified progress, and a stress test that simulates an adapting fraudster."
+    "against verified progress, and a stress test that simulates an adapting anomaly."
 )
 
 # ---------------------------------------------------------------------------
@@ -17,7 +17,7 @@ st.caption(
 # ---------------------------------------------------------------------------
 uploaded = st.file_uploader("Upload the project CSV", type="csv")
 if uploaded is None:
-    st.info("Upload your BIM-AI project dataset (CSV) to begin.")
+    st.info("Upload your project dataset (CSV) to begin.")
     st.stop()
 
 df = pd.read_csv(uploaded)
@@ -80,7 +80,7 @@ core_cols = ["labor_per_progress", "material_per_progress"]
 st.caption(
     "Note: this dataset's raw columns aren't correlated with each other, so labor and "
     "material figures have been rebuilt to scale realistically with verified progress, "
-    "and 10% of projects have been secretly tampered with to create known fraud cases "
+    "and 10% of projects have been secretly tampered with to create known anomaly cases "
     "for testing. This is disclosed here, and would be disclosed in any real presentation."
 )
 
@@ -119,7 +119,7 @@ with tab1:
         f"{base_top.is_fraud.sum()} / {test.is_fraud.sum()}",
     )
     st.caption(
-        "This fraud pattern inflates labor and material claims, not cost directly, "
+        "This anomaly pattern inflates labor and material claims, not cost directly, "
         "so CPI alone mostly misses it. That gap is what the next tab addresses."
     )
 
@@ -141,7 +141,7 @@ with tab2:
 
     caught = test_scored.nlargest(int(0.1 * len(test_scored)), "suspicion").is_fraud.sum()
     col1, col2 = st.columns(2)
-    col1.metric("Model: fraud cases caught (top 10%)", f"{caught} / {test.is_fraud.sum()}")
+    col1.metric("Model: anomaly cases caught (top 10%)", f"{caught} / {test.is_fraud.sum()}")
     col2.metric("CPI-only baseline (for comparison)", f"{base_top.is_fraud.sum()} / {test.is_fraud.sum()}")
 
     st.write("Most suspicious projects:")
@@ -149,21 +149,21 @@ with tab2:
                  "material_per_progress", "Completion_Percentage", "suspicion", "is_fraud"]
     st.dataframe(top[show_cols].round(2))
     st.caption(
-        "`is_fraud` is only shown here because this is simulated data with known answers, "
+        "`is_anomaly` is only shown here because this is simulated data with known answers, "
         "used to test the model. A real deployment wouldn't have this column."
     )
 
 # --- Tab 3: Stress test ---
 with tab3:
-    st.subheader("Stress test: an adapting fraudster vs. the guard")
+    st.subheader("Stress test: an adapting anomaly vs. the guard")
     st.write(
-        "A simulated fraudster starts obvious and gets stealthier whenever it's mostly "
+        "A simulated anomaly starts obvious and gets stealthier whenever it's mostly "
         "caught. One guard never updates; the other retrains each round on what it caught "
         "plus a share of manually audited misses."
     )
 
     n_rounds = st.slider("Number of rounds", 4, 20, 10)
-    audit_rate = st.slider("Share of missed fraud manually audited each round", 0.0, 1.0, 0.2)
+    audit_rate = st.slider("Share of missed anomaly manually audited each round", 0.0, 1.0, 0.2)
     run = st.button("Run stress test")
 
     if run:
@@ -230,8 +230,8 @@ with tab3:
         ax1.set_ylim(0, 1)
         ax1.legend(loc="upper right")
         ax2 = ax1.twinx()
-        ax2.plot(rounds, stealths, "--", color="steelblue", alpha=0.5, label="Fraudster stealth")
-        ax2.set_ylabel("Fraudster stealth", color="steelblue")
+        ax2.plot(rounds, stealths, "--", color="steelblue", alpha=0.5, label="Anomaly stealth")
+        ax2.set_ylabel("Anomaly stealth", color="steelblue")
         ax2.set_ylim(0, 1)
         st.pyplot(fig)
 
@@ -239,7 +239,7 @@ with tab3:
         st.dataframe(result_df.round(2))
 
         st.caption(
-            "Both guards typically degrade as the fraudster gets stealthier. Retraining "
+            "Both guards typically degrade as the anomaly gets stealthier. Retraining "
             "on caught cases plus a share of audited misses may or may not close that gap "
             "meaningfully, which is itself a finding worth discussing: detectors can plateau "
             "against an adapting attacker even when they're allowed to retrain."
